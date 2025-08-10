@@ -530,8 +530,8 @@ section {
   text-align: center;
 }
 .thanks p a {
+  margin-top: 20px;
   font-size: 14px;
-  text-decoration: underline;
 }
 .thanks p img {
   height: 22px;
