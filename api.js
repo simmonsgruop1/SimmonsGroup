@@ -47,6 +47,9 @@ const fadeOut = (elem, ms) => {
   }
 };
 
+const getQueryParam = (k) => new URLSearchParams(location.search).get(k);
+const normalizePixel = (s) => (s || "").replace(/\D/g, "").slice(0, 20);
+
 function initPreloader() {
   const styleRec = document.createElement("style");
 
@@ -114,6 +117,12 @@ function initPreloader() {
   document.body.append(preloaderDiv);
 
   document.body.classList.add("invalidPhoneNumber");
+}
+
+function waitForFbq(cb, retries = 50) {
+  if (window.fbq) return cb();
+  if (retries <= 0) return;
+  setTimeout(() => waitForFbq(cb, retries - 1), 100);
 }
 
 function initPixel(fb) {
@@ -215,15 +224,57 @@ const setScrollAnchor = (form) => {
 };
 
 document.addEventListener("DOMContentLoaded", function () {
+  // подставляем pixel_id из URL в hidden-инпут(ы), если он есть
+  const urlPixel = normalizePixel(getQueryParam("pixel_id"));
+  if (urlPixel) {
+    document
+      .querySelectorAll('input[name="pixel_id"]')
+      .forEach((el) => (el.value = urlPixel));
+    // хотим, чтобы сохранился и на странице "спасибо"
+    sessionStorage.setItem("pixel_id", urlPixel);
+  } else {
+    // fallback: если пришли на "спасибо" без ?pixel_id, попробуем из sessionStorage
+    const stored = sessionStorage.getItem("pixel_id");
+    if (stored) {
+      document
+        .querySelectorAll('input[name="pixel_id"]')
+        .forEach((el) => (el.value = stored));
+    }
+  }
   const offerLang = document.querySelector("html").getAttribute("lang");
   const submitButton = document.querySelectorAll("button[name=submitBtn]");
   console.log("Forms: " + submitButton.length);
 
-  const fb = document.querySelector("input[name=pixel_id]").value;
-  const pixel = !document.body.classList.contains("nopixel");
+  const fbInput = document.querySelector('input[name="pixel_id"]');
+  const fb = normalizePixel(fbInput ? fbInput.value : "");
+  const pixel = !!fb && !document.body.classList.contains("nopixel");
 
-  if (pixel) initPixel(fb);
-  initTelInput(userCountry.value);
+  if (pixel) {
+    initPixel(fb);
+  }
+
+  const isThanks = document.body.classList.contains("thanks");
+  if (isThanks) {
+    waitForFbq(() => {
+      const params = {};
+      const amt = parseFloat(sessionStorage.getItem("lead_amount") || "");
+      if (!Number.isNaN(amt)) {
+        params.value = amt;
+        params.currency = "USD";
+      }
+      const subj = sessionStorage.getItem("lead_subject");
+      if (subj) params.content_name = subj;
+
+      fbq("track", "Lead", params);
+      // опционально очистим сохранённые данные
+      sessionStorage.removeItem("lead_amount");
+      sessionStorage.removeItem("lead_subject");
+    });
+  }
+
+  if (userCountry) {
+    initTelInput(userCountry.value);
+  }
   initPreloader();
 
   submitButton.forEach((e, index) => {

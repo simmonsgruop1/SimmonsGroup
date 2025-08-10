@@ -9,6 +9,9 @@ document
 
     const data = Object.fromEntries(new FormData(this).entries());
 
+    sessionStorage.setItem("lead_amount", data.message || "");
+    sessionStorage.setItem("lead_subject", data.subject || "");
+
     try {
       const resp = await fetch("/api/submit_form", {
         method: "POST",
