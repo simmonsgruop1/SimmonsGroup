@@ -245,8 +245,12 @@ document.addEventListener("DOMContentLoaded", function () {
   const submitButton = document.querySelectorAll("button[name=submitBtn]");
   console.log("Forms: " + submitButton.length);
 
-  const fbInput = document.querySelector('input[name="pixel_id"]');
-  const fb = normalizePixel(fbInput ? fbInput.value : "");
+  const fbFromInput = document.querySelector('input[name="pixel_id"]')?.value;
+  const fb = normalizePixel(
+    fbFromInput ||
+      sessionStorage.getItem("pixel_id") ||
+      getQueryParam("pixel_id")
+  );
   const pixel = !!fb && !document.body.classList.contains("nopixel");
 
   if (pixel) {
