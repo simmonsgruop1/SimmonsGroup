@@ -2,27 +2,25 @@ document
   .getElementById("contact-form")
   .addEventListener("submit", async function (event) {
     event.preventDefault();
-
-    // HTML5-валидация (не отправляем, если есть ошибки)
     if (!this.checkValidity()) {
       this.reportValidity();
       return;
     }
 
-    const formData = new FormData(this);
+    const data = Object.fromEntries(new FormData(this).entries());
 
     try {
-      const resp = await fetch("submit_form.php", {
+      const resp = await fetch("/api/submit_form", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
       });
 
       if (resp.ok) {
-        window.location.href = "thanks.php";
+        window.location.href = "thanks.html";
       } else {
-        const text = await resp.text();
-        alert("Ошибка при отправке формы. Попробуйте ещё раз.");
-        console.error("Bad response:", resp.status, text);
+        const t = await resp.text();
+        alert(t || "Ошибка при отправке формы.");
       }
     } catch (err) {
       alert("Ошибка при отправке формы. Проверьте соединение.");
