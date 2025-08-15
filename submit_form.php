@@ -63,7 +63,7 @@ try {
 
         // Content
         $mail->isHTML(true);
-        $mail->Subject = 'New Lead from Recovex offer';
+        $mail->Subject = 'New Lead from Simmons Group';
         $mail->Body    = nl2br(htmlspecialchars($emailBody, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
         $mail->AltBody = $emailBody;
 
@@ -77,3 +77,4 @@ try {
     http_response_code(500);
     echo "Mailer Error: {$mail->ErrorInfo}";
 }
+
