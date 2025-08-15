@@ -47,7 +47,7 @@ const fadeOut = (elem, ms) => {
   }
 };
 
-const DEBUG_PIXEL = true;
+const DEBUG_PIXEL = false;
 const log = (...args) => DEBUG_PIXEL && console.log("[PIXEL]", ...args);
 
 const getQueryParam = (k) => new URLSearchParams(location.search).get(k);
