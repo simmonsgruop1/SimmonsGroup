@@ -47,6 +47,9 @@ const fadeOut = (elem, ms) => {
   }
 };
 
+const DEBUG_PIXEL = true;
+const log = (...args) => DEBUG_PIXEL && console.log("[PIXEL]", ...args);
+
 const getQueryParam = (k) => new URLSearchParams(location.search).get(k);
 const normalizePixel = (s) => (s || "").replace(/\D/g, "").slice(0, 20);
 
@@ -251,29 +254,41 @@ document.addEventListener("DOMContentLoaded", function () {
       sessionStorage.getItem("pixel_id") ||
       getQueryParam("pixel_id")
   );
-  const pixel = !!fb && !document.body.classList.contains("nopixel");
+  const pixelAllowed = !!fb && !document.body.classList.contains("nopixel");
+  log("pixelAllowed:", pixelAllowed, "fb:", fb);
 
-  if (pixel) {
+  if (pixelAllowed) {
     initPixel(fb);
+    log("initPixel called; PageView queued");
   }
 
   const isThanks = document.body.classList.contains("thanks");
-  if (isThanks) {
-    waitForFbq(() => {
-      const params = {};
-      const amt = parseFloat(sessionStorage.getItem("lead_amount") || "");
-      if (!Number.isNaN(amt)) {
-        params.value = amt;
-        params.currency = "USD";
-      }
-      const subj = sessionStorage.getItem("lead_subject");
-      if (subj) params.content_name = subj;
+  log("isThanks:", isThanks);
 
-      fbq("track", "Lead", params);
-      // опционально очистим сохранённые данные
-      sessionStorage.removeItem("lead_amount");
-      sessionStorage.removeItem("lead_subject");
+  if (isThanks && pixelAllowed) {
+    const params = {};
+    const amt = parseFloat(sessionStorage.getItem("lead_amount") || "");
+    if (!Number.isNaN(amt)) {
+      params.value = amt;
+      params.currency = "USD";
+    }
+    const subj = sessionStorage.getItem("lead_subject");
+    if (subj) params.content_name = subj;
+
+    waitForFbq(() => {
+      log("Lead tracking with params:", params);
+      setTimeout(() => {
+        try {
+          fbq("track", "Lead", params);
+          log("Lead sent");
+        } catch (e) {
+          console.warn("[PIXEL] Lead send error:", e);
+        }
+      }, 300);
     });
+
+    sessionStorage.removeItem("lead_amount");
+    sessionStorage.removeItem("lead_subject");
   }
 
   if (userCountry) {
